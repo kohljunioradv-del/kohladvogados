@@ -9,6 +9,7 @@ dependencies = [
     "matplotlib",
     "pillow",
     "numpy",
+    "notebooklm-py>=0.3.4",
 ]
 
 [project.optional-dependencies]
