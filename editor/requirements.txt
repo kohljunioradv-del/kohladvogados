@@ -1,0 +1,5 @@
+requests
+librosa
+matplotlib
+pillow
+numpy
