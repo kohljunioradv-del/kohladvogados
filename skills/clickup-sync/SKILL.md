@@ -17,7 +17,9 @@ description: Sincroniza tarefas do ClickUp com o NotebookLM, executa atos de aç
 
 ```bash
 export CLICKUP_API_KEY="pk_..."          # Token pessoal do ClickUp
-export CLICKUP_LIST_ID="..."             # ID da lista (Settings → List → Copy ID)
+export CLICKUP_TEAM_ID="..."             # ID do workspace (número após pk_ na API key)
+export CLICKUP_SPACE_IDS=""             # Opcional: IDs separados por vírgula para filtrar spaces
+export CLICKUP_INCLUDE_CLOSED="false"   # "true" para incluir tarefas fechadas
 export NOTEBOOKLM_NOTEBOOK_ID="ccaae8d7-bc1d-4e6d-9630-e5c6260882d0"
 export ANTHROPIC_API_KEY="sk-ant-..."
 export OBSIDIAN_VAULT_PATH="/caminho/para/vault"
