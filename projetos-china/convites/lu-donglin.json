@@ -1,0 +1,62 @@
+{
+  "convite": {
+    "responsavel": "Lu Donglin",
+    "cargo": "Responsável de Máquina",
+    "data_entrada": "2026-05-13",
+    "empresa": {
+      "nome": "Zhongtang Shengyuan International Trade (Jiangsu) Co., Ltd.",
+      "numero_registro": "91320213MA1W4UN59N",
+      "endereco_sede": "No. 2, Qiangao Road, Liangxi District, Wuxi",
+      "cidade": "Jiangsu Province",
+      "principais_negocios": {
+        "projetos_licenca": [
+          "Importação e exportação de mercadorias",
+          "Importação e exportação de tecnologia",
+          "Operação de alimentos (item sujeito à aprovação de acordo com a lei, pode ser realizado a atividade comercial após a aprovação dos departamentos relevantes, os projetos de negócios específicos serão os resultados da aprovação)"
+        ],
+        "projeto_geral": [
+          "Venda de produtos agrícolas e secundários",
+          "Venda de produtos de cortiça",
+          "Venda de produtos de madeira para uso diário",
+          "Venda de materiais de construção",
+          "Venda de fertilizantes",
+          "Venda de materiais metálicos",
+          "Venda de produtos químicos (excluindo produtos químicos licenciados)",
+          "Venda de produtos de borracha",
+          "Venda de novos materiais funcionais metálicos",
+          "Venda de ligas de metais inoxidáveis",
+          "Venda de produtos metálicos",
+          "Venda a retalho de carne fresca",
+          "Por atacado de carne fresca",
+          "Venda por atacado de produtos agrícolas",
+          "Varejo de produtos agrícolas para consumo",
+          "Venda de carvão e produtos",
+          "Venda por atacado de produtos de metal",
+          "Retalhagem de produtos de metal",
+          "Venda de máquinas agrícolas",
+          "Venda de máquinas para construção civil",
+          "Venda de automóveis",
+          "Retalho de peças automotivas",
+          "Peças automotivas por atacado",
+          "Venda de equipamentos de transporte marítimo",
+          "Venda de peças para equipamentos de transporte marítimo",
+          "Venda de equipamentos",
+          "Venda de baterias",
+          "Venda de peças de bateria",
+          "Venda de ferramentas eólicas e elétricas",
+          "Venda de bicicletas auxiliares, motociclos e peças sobressalentes",
+          "Venda de bicicletas elétricas",
+          "Venda de matérias-primas para alimentação animal",
+          "Venda de fertilizantes",
+          "Venda de filmes agrícolas",
+          "Venda de dispositivos médicos da primeira categoria",
+          "Venda de dispositivos médicos do tipo II",
+          "Serviços técnicos de energia solar",
+          "Serviços técnicos, desenvolvimento tecnológico, consultoria técnica, intercâmbio tecnológico, transferência de tecnologia, divulgação de tecnologia",
+          "Fabricação de veículos de lazer fora de estrada e peças de reposição",
+          "Venda de veículos recreativos e peças sobressalentes fora de estrada (exceto os itens sujeitos a aprovação de acordo com a lei, para realizar atividades comerciais de forma independente com licença comercial conforme a lei)"
+        ]
+      }
+    }
+  }
+}
