@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Carta de Recomendação – Senado Federal</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Times+New+Roman&display=swap');
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      background: #e8e8e8;
+      font-family: 'Times New Roman', Times, serif;
+      font-size: 12pt;
+      color: #000;
+    }
+
+    .page {
+      width: 210mm;
+      min-height: 297mm;
+      margin: 20mm auto;
+      background: #fff;
+      padding: 20mm 25mm 25mm 30mm;
+      position: relative;
+      box-shadow: 0 0 15px rgba(0,0,0,0.2);
+    }
+
+    /* ── TIMBRADO ── */
+    .header {
+      text-align: center;
+      border-bottom: 3px double #1a3a6b;
+      padding-bottom: 8mm;
+      margin-bottom: 8mm;
+    }
+
+    .header .brasao {
+      width: 55mm;
+      margin-bottom: 3mm;
+    }
+
+    .header h1 {
+      font-size: 14pt;
+      font-weight: bold;
+      letter-spacing: 2px;
+      color: #1a3a6b;
+      text-transform: uppercase;
+    }
+
+    .header h2 {
+      font-size: 11pt;
+      font-weight: normal;
+      color: #1a3a6b;
+      letter-spacing: 1px;
+    }
+
+    .header .gabinete {
+      font-size: 10pt;
+      margin-top: 2mm;
+      color: #333;
+    }
+
+    /* ── CORPO ── */
+    .doc-number {
+      text-align: right;
+      font-size: 10pt;
+      margin-bottom: 6mm;
+      color: #555;
+    }
+
+    .local-data {
+      text-align: right;
+      margin-bottom: 10mm;
+      font-size: 11pt;
+    }
+
+    .destinatario {
+      margin-bottom: 10mm;
+    }
+
+    .destinatario p {
+      line-height: 1.6;
+    }
+
+    .assunto {
+      margin-bottom: 8mm;
+      font-weight: bold;
+      text-decoration: underline;
+    }
+
+    .corpo {
+      line-height: 1.8;
+      text-align: justify;
+      margin-bottom: 10mm;
+    }
+
+    .corpo p {
+      margin-bottom: 5mm;
+      text-indent: 15mm;
+    }
+
+    .corpo p:first-child {
+      text-indent: 0;
+    }
+
+    /* tabela de beneficiários */
+    .tabela-beneficiarios {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 6mm 0;
+      font-size: 10pt;
+    }
+
+    .tabela-beneficiarios th {
+      background: #1a3a6b;
+      color: #fff;
+      padding: 2mm 3mm;
+      text-align: left;
+      border: 1px solid #1a3a6b;
+    }
+
+    .tabela-beneficiarios td {
+      padding: 2mm 3mm;
+      border: 1px solid #aaa;
+      vertical-align: middle;
+    }
+
+    .tabela-beneficiarios tr:nth-child(even) td {
+      background: #f2f5fb;
+    }
+
+    /* ── ASSINATURA ── */
+    .assinatura {
+      margin-top: 15mm;
+      text-align: center;
+    }
+
+    .assinatura .linha {
+      width: 80mm;
+      border-top: 1px solid #000;
+      margin: 0 auto 2mm;
+    }
+
+    .assinatura .nome {
+      font-weight: bold;
+      font-size: 12pt;
+    }
+
+    .assinatura .cargo {
+      font-size: 10pt;
+    }
+
+    /* ── RODAPÉ ── */
+    .rodape {
+      position: absolute;
+      bottom: 10mm;
+      left: 30mm;
+      right: 25mm;
+      border-top: 1px solid #1a3a6b;
+      padding-top: 2mm;
+      font-size: 8pt;
+      color: #555;
+      text-align: center;
+    }
+
+    /* Print */
+    @media print {
+      body { background: #fff; }
+      .page {
+        margin: 0;
+        box-shadow: none;
+        width: 100%;
+        padding: 20mm 25mm 25mm 30mm;
+      }
+    }
+  </style>
+</head>
+<body>
+<div class="page">
+
+  <!-- ══════════ CABEÇALHO ══════════ -->
+  <div class="header">
+    <!--
+      Substitua o src abaixo pelo caminho real do brasão do Senado.
+      Você pode baixar a versão oficial em: www.senado.leg.br
+    -->
+    <img
+      class="brasao"
+      src="brasao-senado.png"
+      alt="Brasão do Senado Federal"
+      onerror="this.style.display='none'"
+    />
+    <h1>Senado Federal</h1>
+    <h2>República Federativa do Brasil</h2>
+    <div class="gabinete">
+      Gabinete do Senador Nelson Trad Filho &nbsp;|&nbsp; Estado de Mato Grosso do Sul
+    </div>
+  </div>
+
+  <!-- ══════════ NÚMERO / DATA ══════════ -->
+  <div class="doc-number">
+    Of. Gab. Nº &nbsp;_____ / 2026
+  </div>
+
+  <div class="local-data">
+    Brasília – DF, &nbsp;_____ de ______________ de 2026.
+  </div>
+
+  <!-- ══════════ DESTINATÁRIO ══════════ -->
+  <div class="destinatario">
+    <p><strong>Ao</strong></p>
+    <p>Ilmo. Sr.</p>
+    <p><strong>[Nome do Destinatário]</strong></p>
+    <p>[Cargo / Autoridade Consular]</p>
+    <p>[Embaixada / Consulado / Órgão]</p>
+    <p>[Cidade – País]</p>
+  </div>
+
+  <!-- ══════════ ASSUNTO ══════════ -->
+  <div class="assunto">
+    Assunto: Carta de Recomendação para Concessão de Vistos – Grupo de Empresários
+  </div>
+
+  <!-- ══════════ CORPO ══════════ -->
+  <div class="corpo">
+
+    <p>Senhor(a) [Cargo],</p>
+
+    <p>
+      Na qualidade de Senador da República pelo Estado de Mato Grosso do Sul, venho,
+      respeitosamente, por meio desta, apresentar e recomendar o grupo de empresários
+      abaixo identificados, que realizaram visita institucional ao Estado de Mato Grosso
+      do Sul, oportunidade em que foram recebidos por este Gabinete.
+    </p>
+
+    <p>
+      Durante o encontro, os referidos empresários demonstraram expressivo interesse em
+      estabelecer parcerias comerciais e realizar investimentos de relevante impacto
+      econômico no Estado de Mato Grosso do Sul, nos setores de
+      <strong>[descrever setores: agronegócio, infraestrutura, tecnologia, etc.]</strong>.
+      Há grande expectativa, por parte desta representação parlamentar e do Governo
+      Estadual, de que tais iniciativas possam se concretizar, gerando empregos e
+      desenvolvimento regional.
+    </p>
+
+    <p>
+      Diante do exposto, e considerando o potencial contributivo deste grupo para o
+      fortalecimento das relações bilaterais entre o Brasil e
+      <strong>[País de origem dos empresários]</strong>, solicito, com o máximo apreço,
+      que Vossa Senhoria analise com benevolência a concessão dos respectivos vistos
+      de entrada no território brasileiro às pessoas relacionadas a seguir:
+    </p>
+
+    <!-- Tabela de beneficiários -->
+    <table class="tabela-beneficiarios">
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>Nome Completo / Full Name</th>
+          <th>Nº Passaporte / Passport No.</th>
+          <th>Nascimento / Date of Birth</th>
+          <th>Empresa / Company</th>
+          <th>Cargo / Position</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>1</td>
+          <td>&nbsp;</td>
+          <td>&nbsp;</td>
+          <td>&nbsp;</td>
+          <td>&nbsp;</td>
+          <td>&nbsp;</td>
+        </tr>
+        <tr>
+          <td>2</td>
+          <td>&nbsp;</td>
+          <td>&nbsp;</td>
+          <td>&nbsp;</td>
+          <td>&nbsp;</td>
+          <td>&nbsp;</td>
+        </tr>
+        <tr>
+          <td>3</td>
+          <td>&nbsp;</td>
+          <td>&nbsp;</td>
+          <td>&nbsp;</td>
+          <td>&nbsp;</td>
+          <td>&nbsp;</td>
+        </tr>
+        <tr>
+          <td>4</td>
+          <td>&nbsp;</td>
+          <td>&nbsp;</td>
+          <td>&nbsp;</td>
+          <td>&nbsp;</td>
+          <td>&nbsp;</td>
+        </tr>
+        <tr>
+          <td>5</td>
+          <td>&nbsp;</td>
+          <td>&nbsp;</td>
+          <td>&nbsp;</td>
+          <td>&nbsp;</td>
+          <td>&nbsp;</td>
+        </tr>
+        <!-- Adicione mais linhas conforme necessário -->
+      </tbody>
+    </table>
+
+    <p>
+      Coloco o Gabinete à disposição de Vossa Senhoria para quaisquer esclarecimentos
+      adicionais que se fizerem necessários, podendo o contato ser realizado pelo
+      endereço eletrônico <strong>[e-mail do gabinete]</strong> ou pelo telefone
+      <strong>[+55 61 XXXX-XXXX]</strong>.
+    </p>
+
+    <p>
+      Certo de contar com a atenção e compreensão de Vossa Senhoria, subscrevo-me com
+      elevada estima e consideração.
+    </p>
+
+  </div><!-- /corpo -->
+
+  <!-- ══════════ ASSINATURA ══════════ -->
+  <div class="assinatura">
+    <div class="linha"></div>
+    <div class="nome">Nelson Trad Filho</div>
+    <div class="cargo">Senador da República</div>
+    <div class="cargo">Estado de Mato Grosso do Sul</div>
+  </div>
+
+  <!-- ══════════ RODAPÉ ══════════ -->
+  <div class="rodape">
+    Senado Federal &nbsp;|&nbsp; Praça dos Três Poderes, s/n &nbsp;|&nbsp; Brasília – DF &nbsp;|&nbsp; CEP 70165-900
+    &nbsp;|&nbsp; www.senado.leg.br
+  </div>
+
+</div><!-- /page -->
+</body>
+</html>
