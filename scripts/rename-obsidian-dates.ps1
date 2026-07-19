@@ -60,7 +60,8 @@ foreach ($file in $allMdFiles) {
     $base = $file.BaseName
     if ($base -match $dateNamePattern) {
         $d = $Matches['d']; $m = $Matches['m']; $y = $Matches['y']
-        $parsedOk = [datetime]::TryParseExact("$y-$m-$d", 'yyyy-MM-dd', [System.Globalization.CultureInfo]::InvariantCulture, [System.Globalization.DateTimeStyles]::None, [ref]$null)
+        $parsedDate = [datetime]::MinValue
+        $parsedOk = [datetime]::TryParseExact("$y-$m-$d", 'yyyy-MM-dd', [System.Globalization.CultureInfo]::InvariantCulture, [System.Globalization.DateTimeStyles]::None, [ref]$parsedDate)
         if (-not $parsedOk) {
             Write-Warning "Ignorando '$($file.FullName)': '$base' nao e uma data valida."
             continue
