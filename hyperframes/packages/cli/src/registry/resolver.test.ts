@@ -1,6 +1,6 @@
 import { describe, expect, it, vi, beforeEach, afterEach } from "vitest";
 import type { RegistryItem, RegistryManifest } from "@hyperframes/core";
-import { listRegistryItems, loadAllItems, resolveItem } from "./resolver.js";
+import { listRegistryItems, loadAllItems, resolveItem, resolveItemTree } from "./resolver.js";
 
 const MANIFEST: RegistryManifest = {
   $schema: "https://hyperframes.heygen.com/schema/registry.json",
@@ -42,18 +42,40 @@ function buildItem(name: string, type: "hyperframes:example" | "hyperframes:bloc
   };
 }
 
-function mockFetch(overrides: Record<string, unknown> = {}): void {
+/** Shorthand for an extra block entry in the top-level manifest. */
+function BLOCK(name: string): RegistryManifest["items"][number] {
+  return { name, type: "hyperframes:block" };
+}
+
+interface FetchOverrides {
+  /** Item names whose manifest should 404. */
+  missing?: string[];
+  /** `registryDependencies` to graft onto the named items' manifests. */
+  deps?: Record<string, string[]>;
+  /** Extra entries to append to the top-level manifest. */
+  extraEntries?: RegistryManifest["items"];
+}
+
+function mockFetch(overrides: FetchOverrides = {}): void {
+  const manifest: RegistryManifest = overrides.extraEntries
+    ? { ...MANIFEST, items: [...MANIFEST.items, ...overrides.extraEntries] }
+    : MANIFEST;
+
   vi.stubGlobal(
     "fetch",
     vi.fn(async (urlInput: string | URL) => {
       const url = typeof urlInput === "string" ? urlInput : urlInput.toString();
-      if (url.endsWith("/registry.json") && !overrides.registryFails) {
-        return new Response(JSON.stringify(MANIFEST), { status: 200 });
+      if (url.endsWith("/registry.json")) {
+        return new Response(JSON.stringify(manifest), { status: 200 });
       }
       const m = /\/(examples|blocks|components)\/([^/]+)\/registry-item\.json$/.exec(url);
-      if (m && !(overrides.missing as string[] | undefined)?.includes(m[2]!)) {
+      if (m && !overrides.missing?.includes(m[2]!)) {
         const type = m[1] === "examples" ? "hyperframes:example" : "hyperframes:block";
-        return new Response(JSON.stringify(buildItem(m[2]!, type)), { status: 200 });
+        const item = buildItem(m[2]!, type);
+        const deps = overrides.deps?.[m[2]!];
+        return new Response(JSON.stringify(deps ? { ...item, registryDependencies: deps } : item), {
+          status: 200,
+        });
       }
       return new Response("not found", { status: 404 });
     }),
@@ -138,6 +160,78 @@ describe("registry resolver", () => {
       );
       const baseUrl = uniqueBaseUrl();
       await expect(resolveItem("alpha", { baseUrl })).rejects.toThrow(/unreachable/);
+    });
+
+    it("ignores registryDependencies — only the named item comes back", async () => {
+      mockFetch({ deps: { gamma: ["delta"] }, extraEntries: [BLOCK("delta")] });
+      const item = await resolveItem("gamma", { baseUrl: uniqueBaseUrl() });
+      expect(item.name).toBe("gamma");
+    });
+  });
+
+  describe("resolveItemTree", () => {
+    it("returns a single item when it has no dependencies", async () => {
+      const tree = await resolveItemTree("gamma", { baseUrl: uniqueBaseUrl() });
+      expect(tree.map((i) => i.name)).toEqual(["gamma"]);
+    });
+
+    it("walks dependencies transitively, dependencies first and root last", async () => {
+      // gamma → delta → epsilon
+      mockFetch({
+        deps: { gamma: ["delta"], delta: ["epsilon"] },
+        extraEntries: [BLOCK("delta"), BLOCK("epsilon")],
+      });
+      const tree = await resolveItemTree("gamma", { baseUrl: uniqueBaseUrl() });
+      expect(tree.map((i) => i.name)).toEqual(["epsilon", "delta", "gamma"]);
+    });
+
+    it("visits a shared dependency once and keeps it ahead of both dependents", async () => {
+      // gamma → (delta, epsilon), both → zeta
+      mockFetch({
+        deps: { gamma: ["delta", "epsilon"], delta: ["zeta"], epsilon: ["zeta"] },
+        extraEntries: [BLOCK("delta"), BLOCK("epsilon"), BLOCK("zeta")],
+      });
+      const tree = await resolveItemTree("gamma", { baseUrl: uniqueBaseUrl() });
+      const names = tree.map((i) => i.name);
+      expect(names.filter((n) => n === "zeta")).toHaveLength(1);
+      expect(names.indexOf("zeta")).toBeLessThan(names.indexOf("delta"));
+      expect(names.indexOf("zeta")).toBeLessThan(names.indexOf("epsilon"));
+      expect(names[names.length - 1]).toBe("gamma");
+    });
+
+    it("throws on a dependency cycle instead of recursing forever", async () => {
+      mockFetch({
+        deps: { gamma: ["delta"], delta: ["epsilon"], epsilon: ["delta"] },
+        extraEntries: [BLOCK("delta"), BLOCK("epsilon")],
+      });
+      await expect(resolveItemTree("gamma", { baseUrl: uniqueBaseUrl() })).rejects.toThrow(
+        /Circular registryDependencies: delta → epsilon → delta/,
+      );
+    });
+
+    it("throws on a self-referencing dependency", async () => {
+      mockFetch({ deps: { gamma: ["gamma"] } });
+      await expect(resolveItemTree("gamma", { baseUrl: uniqueBaseUrl() })).rejects.toThrow(
+        /Circular registryDependencies: gamma → gamma/,
+      );
+    });
+
+    it("names the dependent item when a dependency is missing from the registry", async () => {
+      mockFetch({ deps: { gamma: ["ghost"] } });
+      await expect(resolveItemTree("gamma", { baseUrl: uniqueBaseUrl() })).rejects.toThrow(
+        /Dependency "ghost" of "gamma" not found in registry/,
+      );
+    });
+
+    it("propagates an unreachable dependency manifest", async () => {
+      mockFetch({
+        deps: { gamma: ["delta"] },
+        extraEntries: [BLOCK("delta")],
+        missing: ["delta"],
+      });
+      await expect(resolveItemTree("gamma", { baseUrl: uniqueBaseUrl() })).rejects.toThrow(
+        /Registry fetch failed/,
+      );
     });
   });
 });

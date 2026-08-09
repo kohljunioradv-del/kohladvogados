@@ -12,7 +12,7 @@ import { existsSync } from "node:fs";
 import { resolve, relative } from "node:path";
 import { ITEM_TYPE_DIRS, type RegistryItem } from "@hyperframes/core";
 import { c } from "../ui/colors.js";
-import { installItem, resolveItem } from "../registry/index.js";
+import { installItem, resolveItemTree } from "../registry/index.js";
 import {
   DEFAULT_PROJECT_CONFIG,
   loadProjectConfig,
@@ -81,6 +81,8 @@ export interface RunAddResult {
   type: RegistryItem["type"];
   typeDir: string;
   written: string[];
+  /** Names of `registryDependencies` installed alongside the requested item. */
+  dependencies: string[];
   snippet: string;
   clipboardCopied: boolean;
 }
@@ -106,13 +108,17 @@ export async function runAdd(opts: RunAddArgs): Promise<RunAddResult> {
     config = DEFAULT_PROJECT_CONFIG;
   }
 
-  // 2. Resolve the item from the registry.
-  let item: RegistryItem;
+  // 2. Resolve the item and its transitive registryDependencies. The tree is
+  //    topo-sorted with the requested item last, so dependencies are on disk
+  //    before the item that includes them.
+  let tree: RegistryItem[];
   try {
-    item = await resolveItem(opts.name, { baseUrl: config.registry });
+    tree = await resolveItemTree(opts.name, { baseUrl: config.registry });
   } catch (err) {
     throw new AddError(err instanceof Error ? err.message : String(err), "unknown-item");
   }
+  const item = tree[tree.length - 1]!;
+  const dependencies = tree.slice(0, -1);
 
   if (item.type === "hyperframes:example") {
     throw new AddError(
@@ -120,27 +126,40 @@ export async function runAdd(opts: RunAddArgs): Promise<RunAddResult> {
       "example-type",
     );
   }
+  // Examples are whole projects — installing one as a dependency would scatter
+  // its scaffolding (index.html and friends) across the host project.
+  const exampleDep = dependencies.find((d) => d.type === "hyperframes:example");
+  if (exampleDep) {
+    throw new AddError(
+      `"${item.name}" depends on "${exampleDep.name}", which is an example — examples cannot be installed as dependencies.`,
+      "wrong-type",
+    );
+  }
 
   // 3. Remap targets per project config.
-  const remappedFiles = item.files.map((f) => ({
-    ...f,
-    target: remapTarget(item, f.target, config.paths),
-  }));
-  const itemForInstall: RegistryItem = { ...item, files: remappedFiles };
+  const withRemappedTargets = (source: RegistryItem): RegistryItem => ({
+    ...source,
+    files: source.files.map((f) => ({ ...f, target: remapTarget(source, f.target, config.paths) })),
+  });
+  const treeForInstall = tree.map(withRemappedTargets);
+  const itemForInstall = treeForInstall[treeForInstall.length - 1]!;
 
   // 4. Install — the installer validates every target before any write.
-  let written: string[];
-  try {
-    const result = await installItem(itemForInstall, {
-      destDir: projectDir,
-      baseUrl: config.registry,
-    });
-    written = result.written;
-  } catch (err) {
-    throw new AddError(
-      `Install failed: ${err instanceof Error ? err.message : String(err)}`,
-      "install-failed",
-    );
+  const written: string[] = [];
+  for (const toInstall of treeForInstall) {
+    try {
+      const result = await installItem(toInstall, {
+        destDir: projectDir,
+        baseUrl: config.registry,
+      });
+      written.push(...result.written);
+    } catch (err) {
+      const what = toInstall === itemForInstall ? "Install" : `Install of "${toInstall.name}"`;
+      throw new AddError(
+        `${what} failed: ${err instanceof Error ? err.message : String(err)}`,
+        "install-failed",
+      );
+    }
   }
 
   // 5. Build include snippet + clipboard copy.
@@ -158,6 +177,7 @@ export async function runAdd(opts: RunAddArgs): Promise<RunAddResult> {
     type: item.type,
     typeDir: ITEM_TYPE_DIRS[item.type],
     written,
+    dependencies: dependencies.map((d) => d.name),
     snippet,
     clipboardCopied,
   };
@@ -209,6 +229,9 @@ export default defineCommand({
       }
       console.log("");
       console.log(`${c.success("✓")} Added ${c.accent(result.name)} (${result.type})`);
+      if (result.dependencies.length > 0) {
+        console.log(c.dim(`  with dependencies: ${result.dependencies.join(", ")}`));
+      }
       for (const file of result.written) {
         console.log(`  ${c.dim(relative(projectDir, file))}`);
       }

@@ -1,7 +1,6 @@
 /**
- * Registry resolver — loads the top-level manifest and per-item manifests.
- * No transitive dependency resolution yet (examples don't have any); added
- * when blocks/components need it for the `add` command.
+ * Registry resolver — loads the top-level manifest and per-item manifests,
+ * and walks `registryDependencies` transitively for the `add` command.
  */
 
 import type { ItemType, RegistryItem, RegistryManifestEntry } from "@hyperframes/core";
@@ -64,26 +63,83 @@ export async function loadAllItems(
 }
 
 /**
- * Resolve a single item by name. Throws if unknown or unreachable.
- *
- * TODO: walk registryDependencies transitively and return a topo-sorted
- * list of items. Today examples have no deps so this returns a single item.
- * Blocks and components will need transitive resolution once they ship with
- * deps (seed items in Phase B).
+ * Look up a manifest entry by name, throwing a message that lists what the
+ * registry does offer. `requiredBy` names the item that pulled this one in,
+ * so a broken `registryDependencies` entry points at its dependent rather
+ * than looking like a bad user-supplied name.
+ */
+function findEntry(
+  entries: RegistryManifestEntry[],
+  name: string,
+  requiredBy?: string,
+): RegistryManifestEntry {
+  const entry = entries.find((e) => e.name === name);
+  if (entry) return entry;
+  const subject = requiredBy ? `Dependency "${name}" of "${requiredBy}"` : `Item "${name}"`;
+  const available = entries.map((e) => e.name).join(", ");
+  throw new Error(
+    available.length > 0
+      ? `${subject} not found in registry. Available: ${available}`
+      : `${subject} not found — registry unreachable or empty.`,
+  );
+}
+
+/**
+ * Resolve a single item by name, ignoring its dependencies. Throws if unknown
+ * or unreachable. Use `resolveItemTree` when the dependencies must be
+ * installed alongside it.
  */
 export async function resolveItem(
   name: string,
   options: ResolveOptions = {},
 ): Promise<RegistryItem> {
   const entries = await listRegistryItems(undefined, options);
-  const entry = entries.find((e) => e.name === name);
-  if (!entry) {
-    const available = entries.map((e) => e.name).join(", ");
-    throw new Error(
-      available.length > 0
-        ? `Item "${name}" not found in registry. Available: ${available}`
-        : `Item "${name}" not found — registry unreachable or empty.`,
-    );
-  }
+  const entry = findEntry(entries, name);
   return fetchItemManifest(entry.name, entry.type, options.baseUrl);
+}
+
+/**
+ * Resolve an item and everything it depends on, transitively.
+ *
+ * Returns a topologically sorted list: every item appears after the items it
+ * depends on, and the requested item is always last. Items reachable by more
+ * than one path appear once. Throws if any item in the graph is unknown or
+ * unreachable, or if `registryDependencies` contains a cycle.
+ */
+export async function resolveItemTree(
+  name: string,
+  options: ResolveOptions = {},
+): Promise<RegistryItem[]> {
+  const entries = await listRegistryItems(undefined, options);
+  const sorted: RegistryItem[] = [];
+  const done = new Set<string>();
+  // Names on the current DFS path — an entry that reappears here is a cycle.
+  const path: string[] = [];
+
+  async function visit(itemName: string, requiredBy?: string): Promise<void> {
+    if (done.has(itemName)) return;
+    const cycleStart = path.indexOf(itemName);
+    if (cycleStart !== -1) {
+      const loop = [...path.slice(cycleStart), itemName].join(" → ");
+      throw new Error(`Circular registryDependencies: ${loop}`);
+    }
+
+    const entry = findEntry(entries, itemName, requiredBy);
+    const item = await fetchItemManifest(entry.name, entry.type, options.baseUrl);
+
+    path.push(itemName);
+    // Sequential so a cycle is reported along the path that found it, and so
+    // the sort stays deterministic. Dependency lists are small; manifests are
+    // cached by `fetchItemManifest`, so diamonds cost one fetch, not N.
+    for (const dep of item.registryDependencies ?? []) {
+      await visit(dep, itemName);
+    }
+    path.pop();
+
+    done.add(itemName);
+    sorted.push(item);
+  }
+
+  await visit(name);
+  return sorted;
 }

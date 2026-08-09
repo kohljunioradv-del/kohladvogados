@@ -212,7 +212,9 @@ This is suppressed in CI environments, non-TTY shells, and when `HYPERFRAMES_NO_
 
     Output for a block or component is a set of files plus a **paste snippet** — the `<iframe>` tag (for blocks) or the fragment path (for components) to include in your host composition. The snippet is copied to the clipboard by default; add `--no-clipboard` for CI or headless environments.
 
-    Trying `add` with an example's name (e.g. `hyperframes add warm-grain`) emits a clear error pointing you at `init --example`.
+    If an item declares `registryDependencies`, those items are resolved transitively and installed too, dependencies first. Each item is installed once even when several dependents share it, and the paste snippet always describes the item you asked for. Installed dependency names are listed in the command output and in the `dependencies` field of `--json`. A dependency cycle, or a dependency missing from the registry, fails the whole `add` before anything is written.
+
+    Trying `add` with an example's name (e.g. `hyperframes add warm-grain`) emits a clear error pointing you at `init --example`. Examples are whole projects, so they are also rejected as dependencies of a block or component.
 
     ### `catalog`
 

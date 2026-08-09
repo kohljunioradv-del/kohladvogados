@@ -15,6 +15,8 @@ const MANIFEST: RegistryManifest = {
     { name: "my-block", type: "hyperframes:block" },
     { name: "my-component", type: "hyperframes:component" },
     { name: "my-example", type: "hyperframes:example" },
+    { name: "composed-block", type: "hyperframes:block" },
+    { name: "example-dep-block", type: "hyperframes:block" },
   ],
 };
 
@@ -66,10 +68,50 @@ const EXAMPLE_ITEM: RegistryItem = {
   files: [{ path: "index.html", target: "index.html", type: "hyperframes:composition" }],
 };
 
+/** Block that pulls in `my-component` via `registryDependencies`. */
+const COMPOSED_BLOCK_ITEM: RegistryItem = {
+  $schema: "https://hyperframes.heygen.com/schema/registry-item.json",
+  name: "composed-block",
+  type: "hyperframes:block",
+  title: "Composed Block",
+  description: "Block with dependencies for tests",
+  dimensions: { width: 1080, height: 1350 },
+  duration: 8,
+  registryDependencies: ["my-component"],
+  files: [
+    {
+      path: "composed-block.html",
+      target: "compositions/composed-block.html",
+      type: "hyperframes:composition",
+    },
+  ],
+};
+
+/** Invalid on purpose: blocks may not depend on whole-project examples. */
+const EXAMPLE_DEP_BLOCK_ITEM: RegistryItem = {
+  $schema: "https://hyperframes.heygen.com/schema/registry-item.json",
+  name: "example-dep-block",
+  type: "hyperframes:block",
+  title: "Example Dep Block",
+  description: "Block depending on an example",
+  dimensions: { width: 1080, height: 1350 },
+  duration: 4,
+  registryDependencies: ["my-example"],
+  files: [
+    {
+      path: "example-dep-block.html",
+      target: "compositions/example-dep-block.html",
+      type: "hyperframes:composition",
+    },
+  ],
+};
+
 const ITEM_BY_NAME: Record<string, RegistryItem> = {
   "my-block": BLOCK_ITEM,
   "my-component": COMPONENT_ITEM,
   "my-example": EXAMPLE_ITEM,
+  "composed-block": COMPOSED_BLOCK_ITEM,
+  "example-dep-block": EXAMPLE_DEP_BLOCK_ITEM,
 };
 
 function mockFetch(): void {
@@ -237,6 +279,87 @@ describe("runAdd (integration, mocked registry)", () => {
       ).rejects.toMatchObject({
         code: "example-type",
       });
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
+  it("installs registryDependencies alongside the requested item", async () => {
+    const dir = tmp();
+    try {
+      const baseUrl = uniqueBase();
+      writeFileSync(
+        join(dir, "hyperframes.json"),
+        JSON.stringify({
+          registry: baseUrl,
+          paths: { blocks: "compositions", components: "src/fx", assets: "assets" },
+        }),
+        "utf-8",
+      );
+
+      const result = await runAdd({ name: "composed-block", projectDir: dir, skipClipboard: true });
+      expect(result.name).toBe("composed-block");
+      expect(result.dependencies).toEqual(["my-component"]);
+      // The block's own file plus both of the dependency's files.
+      expect(result.written).toHaveLength(3);
+      expect(existsSync(join(dir, "compositions/composed-block.html"))).toBe(true);
+      expect(existsSync(join(dir, "src/fx/my-component/my-component.html"))).toBe(true);
+      expect(existsSync(join(dir, "src/fx/my-component/my-component.css"))).toBe(true);
+      // Dependencies land before the item that includes them.
+      expect(result.written[result.written.length - 1]).toContain("composed-block.html");
+      // The snippet still describes the requested item, not a dependency.
+      expect(result.snippet).toContain("compositions/composed-block.html");
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
+  it("reports no dependencies for an item without registryDependencies", async () => {
+    const dir = tmp();
+    try {
+      const baseUrl = uniqueBase();
+      writeFileSync(
+        join(dir, "hyperframes.json"),
+        JSON.stringify({
+          registry: baseUrl,
+          paths: {
+            blocks: "compositions",
+            components: "compositions/components",
+            assets: "assets",
+          },
+        }),
+        "utf-8",
+      );
+
+      const result = await runAdd({ name: "my-block", projectDir: dir, skipClipboard: true });
+      expect(result.dependencies).toEqual([]);
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
+  it("throws AddError with code 'wrong-type' when a dependency is an example", async () => {
+    const dir = tmp();
+    try {
+      const baseUrl = uniqueBase();
+      writeFileSync(
+        join(dir, "hyperframes.json"),
+        JSON.stringify({
+          registry: baseUrl,
+          paths: {
+            blocks: "compositions",
+            components: "compositions/components",
+            assets: "assets",
+          },
+        }),
+        "utf-8",
+      );
+
+      await expect(
+        runAdd({ name: "example-dep-block", projectDir: dir, skipClipboard: true }),
+      ).rejects.toMatchObject({ code: "wrong-type" });
+      // Nothing is written when the tree is rejected.
+      expect(existsSync(join(dir, "compositions/example-dep-block.html"))).toBe(false);
     } finally {
       rmSync(dir, { recursive: true, force: true });
     }
